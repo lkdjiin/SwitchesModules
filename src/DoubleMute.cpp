@@ -25,6 +25,8 @@ struct DoubleMute : Module {
     };
     enum LightIds {
         MUTE_LIGHT,
+        RAMP_UP_LIGHT,
+        RAMP_DOWN_LIGHT,
         NUM_LIGHTS
     };
 
@@ -51,6 +53,8 @@ struct DoubleMute : Module {
     }
 
     void onReset() override {
+        lights[RAMP_UP_LIGHT].setBrightness(0.f);
+        lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
     }
 
     void process(const ProcessArgs& args) override {
@@ -80,21 +84,29 @@ struct DoubleMute : Module {
                     state = RAMP_DOWN;
                     fadeTimeEllapsed = rampDownTime();
                     lights[MUTE_LIGHT].setBrightness(0.f);
+                    lights[RAMP_DOWN_LIGHT].setBrightness(0.9f);
+                    lights[RAMP_UP_LIGHT].setBrightness(0.f);
                     break;
                 case RAMP_UP:
                     state = RAMP_DOWN;
                     fadeTimeEllapsed = rampUpToDownTime();
                     lights[MUTE_LIGHT].setBrightness(0.f);
+                    lights[RAMP_DOWN_LIGHT].setBrightness(0.9f);
+                    lights[RAMP_UP_LIGHT].setBrightness(0.f);
                     break;
                 case LOW:
                     state = RAMP_UP;
                     fadeTimeEllapsed = 0.f;
                     lights[MUTE_LIGHT].setBrightness(0.9f);
+                    lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
+                    lights[RAMP_UP_LIGHT].setBrightness(0.9f);
                     break;
                 case RAMP_DOWN:
                     state = RAMP_UP;
                     fadeTimeEllapsed = rampDownToUpTime();
                     lights[MUTE_LIGHT].setBrightness(0.9f);
+                    lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
+                    lights[RAMP_UP_LIGHT].setBrightness(0.9f);
                     break;
             }
         }
@@ -156,6 +168,9 @@ struct DoubleMute : Module {
         }
         if (fadeTimeEllapsed >= userValue) {
             state = HIGH;
+            lights[RAMP_UP_LIGHT].setBrightness(0.f);
+        } else {
+            lights[RAMP_UP_LIGHT].setBrightness(1.f - (fadeTimeEllapsed / userValue));
         }
     }
 
@@ -182,6 +197,9 @@ struct DoubleMute : Module {
         }
         if (fadeTimeEllapsed <= 0.f) {
             state = LOW;
+            lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
+        } else {
+            lights[RAMP_DOWN_LIGHT].setBrightness(fadeTimeEllapsed / userValue);
         }
     }
 
@@ -254,6 +272,10 @@ struct DoubleMuteWidget : ModuleWidget {
 
         addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.24, 32.0)),
                     module, DoubleMute::MUTE_LIGHT));
+        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(22.86, 68.5)),
+                    module, DoubleMute::RAMP_UP_LIGHT));
+        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(22.86, 99.5)),
+                    module, DoubleMute::RAMP_DOWN_LIGHT));
     }
 };
 
