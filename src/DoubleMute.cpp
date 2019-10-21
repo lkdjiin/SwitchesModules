@@ -73,7 +73,7 @@ struct DoubleMute : Module {
     }
 
     void setState() {
-        if (muteTrigger.process(params[MUTE_PARAM].getValue() > 0.f)) {
+        if (muteTrigger.process(params[MUTE_PARAM].getValue() > 0.f) || inputs[TRIGGER_MUTE_INPUT].getNormalVoltage(0.f) > 0.f) {
             switch(state) {
                 case HIGH:
                     state = RAMP_DOWN;
@@ -222,20 +222,20 @@ struct DoubleMuteWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addParam(createParamCentered<LEDBezel>(mm2px(Vec(15.24, 32.5)), module, DoubleMute::MUTE_PARAM));
-        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 64.0)), module, DoubleMute::FADE_IN_PARAM));
+        addParam(createParamCentered<LEDBezel>(mm2px(Vec(15.24, 32.0)), module, DoubleMute::MUTE_PARAM));
+        addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 68.5)), module, DoubleMute::FADE_IN_PARAM));
         addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.24, 99.5)), module, DoubleMute::FADE_OUT_PARAM));
-        addParam(createParamCentered<CKSSThree>(mm2px(Vec(15.24, 76.5)), module, DoubleMute::SCALE_IN_PARAM));
+        addParam(createParamCentered<CKSSThree>(mm2px(Vec(15.24, 81.0)), module, DoubleMute::SCALE_IN_PARAM));
         addParam(createParamCentered<CKSSThree>(mm2px(Vec(15.24, 112.0)), module, DoubleMute::SCALE_OUT_PARAM));
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.62, 22.5)), module, DoubleMute::IN1_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.62, 42.5)), module, DoubleMute::IN2_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 12.0)), module, DoubleMute::TRIGGER_MUTE_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.62, 22.0)), module, DoubleMute::IN1_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.62, 42.0)), module, DoubleMute::IN2_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 52.0)), module, DoubleMute::TRIGGER_MUTE_INPUT));
 
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.86, 22.5)), module, DoubleMute::OUT1_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.86, 42.5)), module, DoubleMute::OUT2_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.86, 22.0)), module, DoubleMute::OUT1_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.86, 42.0)), module, DoubleMute::OUT2_OUTPUT));
 
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.24, 32.5)), module, DoubleMute::MUTE_LIGHT));
+        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.24, 32.0)), module, DoubleMute::MUTE_LIGHT));
     }
 };
 
