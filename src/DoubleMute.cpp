@@ -15,6 +15,7 @@ struct DoubleMute : Module {
     enum InputIds {
         IN1_INPUT,
         IN2_INPUT,
+        TRIGGER_MUTE_INPUT,
         NUM_INPUTS
     };
     enum OutputIds {
@@ -229,6 +230,7 @@ struct DoubleMuteWidget : ModuleWidget {
 
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.62, 22.5)), module, DoubleMute::IN1_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.62, 42.5)), module, DoubleMute::IN2_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.24, 12.0)), module, DoubleMute::TRIGGER_MUTE_INPUT));
 
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.86, 22.5)), module, DoubleMute::OUT1_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.86, 42.5)), module, DoubleMute::OUT2_OUTPUT));
