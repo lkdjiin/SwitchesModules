@@ -290,6 +290,42 @@ struct DoubleMuteWidget : ModuleWidget {
         addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(22.86, 99.5)),
                     module, DoubleMute::RAMP_DOWN_LIGHT));
     }
+
+    struct DoubleMuteModeItem : MenuItem {
+        DoubleMute *module;
+        bool mode;
+        void onAction(const event::Action &e) override {
+            module->exponentialFade = mode;
+        }
+        void step() override {
+            rightText = (module->exponentialFade == mode) ? "✔" : "";
+        }
+    };
+
+    void appendContextMenu(Menu *menu) override {
+        MenuLabel *spacerLabel = new MenuLabel();
+        menu->addChild(spacerLabel);
+
+        DoubleMute *module = dynamic_cast<DoubleMute*>(this->module);
+        assert(module);
+
+        MenuLabel *themeLabel = new MenuLabel();
+        themeLabel->text = "Audio Mode";
+        menu->addChild(themeLabel);
+
+        DoubleMuteModeItem *item1 = new DoubleMuteModeItem();
+        item1->text = "Exponential";
+        item1->module = module;
+        item1->mode = true;
+        menu->addChild(item1);
+
+        DoubleMuteModeItem *item2 = new DoubleMuteModeItem();
+        item2->text = "Linear";
+        item2->module = module;
+        item2->mode = false;
+        menu->addChild(item2);
+    }
+
 };
 
 
