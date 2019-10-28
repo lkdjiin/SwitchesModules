@@ -68,10 +68,11 @@ struct DoubleMute : Module {
             case RAMP_UP:
                 rampUp(args.sampleTime);
                 break;
-            case LOW:
-                break;
             case RAMP_DOWN:
                 rampDown(args.sampleTime);
+                break;
+            case LOW:
+            default:
                 break;
         }
     }
@@ -94,16 +95,17 @@ struct DoubleMute : Module {
                     lights[RAMP_DOWN_LIGHT].setBrightness(0.9f);
                     lights[RAMP_UP_LIGHT].setBrightness(0.f);
                     break;
-                case LOW:
+                case RAMP_DOWN:
                     state = RAMP_UP;
-                    fadeTimeEllapsed = 0.f;
+                    fadeTimeEllapsed = rampDownToUpTime();
                     lights[MUTE_LIGHT].setBrightness(0.9f);
                     lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
                     lights[RAMP_UP_LIGHT].setBrightness(0.9f);
                     break;
-                case RAMP_DOWN:
+                case LOW:
+                default:
                     state = RAMP_UP;
-                    fadeTimeEllapsed = rampDownToUpTime();
+                    fadeTimeEllapsed = 0.f;
                     lights[MUTE_LIGHT].setBrightness(0.9f);
                     lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
                     lights[RAMP_UP_LIGHT].setBrightness(0.9f);
