@@ -216,13 +216,10 @@ struct DoubleMute : Module {
 
     json_t *dataToJson() override {
         float value;
-        if (state == HIGH || state == RAMP_UP) {
-            value = 1;
-        } else {
-            value = 0;
-        }
+        value = (state == HIGH || state == RAMP_UP) ? 1 : 0;
         json_t *rootJ = json_object();
         json_object_set_new(rootJ, "state", json_integer(value));
+        json_object_set_new(rootJ, "exponentialFade", json_integer((int) exponentialFade));
         return rootJ;
     }
 
@@ -235,6 +232,11 @@ struct DoubleMute : Module {
             } else {
                 state = LOW;
             }
+        }
+
+        json_t *exponentialFadeJ = json_object_get(rootJ, "exponentialFade");
+        if (exponentialFadeJ) {
+            exponentialFade = json_integer_value(exponentialFadeJ);
         }
     }
 };
