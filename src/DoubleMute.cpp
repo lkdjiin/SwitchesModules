@@ -40,6 +40,7 @@ struct DoubleMute : Module {
     States state;
     dsp::BooleanTrigger muteTrigger;
     float fadeTimeEllapsed;
+    bool exponential = false; // If not it's linear.
 
     DoubleMute() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -159,20 +160,24 @@ struct DoubleMute : Module {
     void rampUp(float sampleTime) {
         fadeTimeEllapsed += sampleTime;
         float userValue = rampUpTime();
+        float mult = fadeTimeEllapsed / userValue;
+        mult = clamp(mult, 0.f, 1.f);
+
+        if (exponential) {
+            mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
+        }
 
         if (inputs[IN1_INPUT].isConnected() && outputs[OUT1_OUTPUT].isConnected()) {
-            outputs[OUT1_OUTPUT].setVoltage(inputs[IN1_INPUT].getVoltage()
-                    * (fadeTimeEllapsed / userValue));
+            outputs[OUT1_OUTPUT].setVoltage(inputs[IN1_INPUT].getVoltage() * mult);
         }
         if (inputs[IN2_INPUT].isConnected() && outputs[OUT2_OUTPUT].isConnected()) {
-            outputs[OUT2_OUTPUT].setVoltage(inputs[IN2_INPUT].getVoltage()
-                    * (fadeTimeEllapsed / userValue));
+            outputs[OUT2_OUTPUT].setVoltage(inputs[IN2_INPUT].getVoltage() * mult);
         }
         if (fadeTimeEllapsed >= userValue) {
             state = HIGH;
             lights[RAMP_UP_LIGHT].setBrightness(0.f);
         } else {
-            lights[RAMP_UP_LIGHT].setBrightness(1.f - (fadeTimeEllapsed / userValue));
+            lights[RAMP_UP_LIGHT].setBrightness(1.f - (mult));
         }
     }
 
@@ -188,20 +193,24 @@ struct DoubleMute : Module {
     void rampDown(float sampleTime) {
         fadeTimeEllapsed -= sampleTime;
         float userValue = rampDownTime();
+        float mult = fadeTimeEllapsed / userValue;
+        mult = clamp(mult, 0.f, 1.f);
+
+        if (exponential) {
+            mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
+        }
 
         if (inputs[IN1_INPUT].isConnected() && outputs[OUT1_OUTPUT].isConnected()) {
-            outputs[OUT1_OUTPUT].setVoltage(inputs[IN1_INPUT].getVoltage()
-                    * (fadeTimeEllapsed) / userValue);
+            outputs[OUT1_OUTPUT].setVoltage(inputs[IN1_INPUT].getVoltage() * mult);
         }
         if (inputs[IN2_INPUT].isConnected() && outputs[OUT2_OUTPUT].isConnected()) {
-            outputs[OUT2_OUTPUT].setVoltage(inputs[IN2_INPUT].getVoltage()
-                    * (fadeTimeEllapsed) / userValue);
+            outputs[OUT2_OUTPUT].setVoltage(inputs[IN2_INPUT].getVoltage() * mult);
         }
         if (fadeTimeEllapsed <= 0.f) {
             state = LOW;
             lights[RAMP_DOWN_LIGHT].setBrightness(0.f);
         } else {
-            lights[RAMP_DOWN_LIGHT].setBrightness(fadeTimeEllapsed / userValue);
+            lights[RAMP_DOWN_LIGHT].setBrightness(mult);
         }
     }
 
