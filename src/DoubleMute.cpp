@@ -40,7 +40,7 @@ struct DoubleMute : Module {
     States state;
     dsp::BooleanTrigger muteTrigger;
     float fadeTimeEllapsed;
-    bool exponential = false; // If not it's linear.
+    bool exponentialFade = true; // If not it's linear.
 
     DoubleMute() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -163,7 +163,7 @@ struct DoubleMute : Module {
         float mult = fadeTimeEllapsed / userValue;
         mult = clamp(mult, 0.f, 1.f);
 
-        if (exponential) {
+        if (exponentialFade) {
             mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
         }
 
@@ -196,7 +196,7 @@ struct DoubleMute : Module {
         float mult = fadeTimeEllapsed / userValue;
         mult = clamp(mult, 0.f, 1.f);
 
-        if (exponential) {
+        if (exponentialFade) {
             mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
         }
 
