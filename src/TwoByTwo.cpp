@@ -33,14 +33,15 @@ struct TwoByTwo : Module {
 
     enum States {
         HIGH,
-        LOW
-        /* RAMP_UP, */
-        /* RAMP_DOWN */
+        LOW,
+        RAMP_UP,
+        RAMP_DOWN
     };
 
     States state;
     dsp::BooleanTrigger muteTrigger;
-    float fadeTimeEllapsed;
+    float fadeInTime;
+    float fadeOutTime;
     bool exponentialFade = true; // If not it's linear.
 
     TwoByTwo() {
@@ -58,6 +59,13 @@ struct TwoByTwo : Module {
         lights[GROUP2_LIGHT].setBrightness(0.f);
     }
 
+    // We need an initial state. For that matter, HIGH is as good as LOW.
+    void onAdd() override {
+        if (state != HIGH && state != LOW) {
+            state = HIGH;
+        }
+    }
+
     void process(const ProcessArgs& args) override {
         setState();
 
@@ -68,24 +76,26 @@ struct TwoByTwo : Module {
                 lights[GROUP2_LIGHT].setBrightness(0.f);
                 high();
                 break;
-            /* case RAMP_UP: */
-            /*     // Fade in group 1. */
-            /*     rampUp(args.sampleTime, 0, 1); */
-            /*     // Fade out group 2. */
-            /*     rampDown(args.sampleTime, 2, 3); */
-            /*     break; */
-            /* case RAMP_DOWN: */
-            /*     // Fade out group 1. */
-            /*     rampDown(args.sampleTime, 0, 1); */
-            /*     // Fade in group 2. */
-            /*     rampUp(args.sampleTime, 2, 3); */
-            /*     break; */
+            case RAMP_UP:
+                // Fade in group 1.
+                rampUp(args.sampleTime, 0, 1);
+                // Fade out group 2.
+                rampDown(args.sampleTime, 2, 3);
+                break;
+            case RAMP_DOWN:
+                // Fade out group 1.
+                rampDown(args.sampleTime, 0, 1);
+                // Fade in group 2.
+                rampUp(args.sampleTime, 2, 3);
+                break;
             case LOW:
-            default:
                 lights[MUTE_LIGHT].setBrightness(0.f);
                 lights[GROUP1_LIGHT].setBrightness(0.f);
                 lights[GROUP2_LIGHT].setBrightness(0.9f);
                 low();
+                break;
+            default:
+                printf("*** NO STATE :(((\n");
                 break;
         }
     }
@@ -95,36 +105,48 @@ struct TwoByTwo : Module {
                 || inputs[TRIGGER_MUTE_INPUT].getNormalVoltage(0.f) > 0.f) {
             switch(state) {
                 case HIGH:
-                    /* state = RAMP_DOWN; */
-                    state = LOW;
-                    fadeTimeEllapsed = rampTime();
+                    state = RAMP_DOWN;
+                    fadeOutTime = rampTime();
+                    fadeInTime = 0.f;
                     lights[MUTE_LIGHT].setBrightness(0.f);
                     lights[RAMP_LIGHT].setBrightness(0.9f);
                     break;
-                /* case RAMP_UP: */
-                /*     state = RAMP_DOWN; */
-                /*     fadeTimeEllapsed = rampFromOneAnotherTime(); */
-                /*     lights[MUTE_LIGHT].setBrightness(0.f); */
-                /*     lights[RAMP_LIGHT].setBrightness(0.9f); */
-                /*     break; */
-                /* case RAMP_DOWN: */
-                /*     state = RAMP_UP; */
-                /*     fadeTimeEllapsed = rampFromOneAnotherTime(); */
-                /*     lights[MUTE_LIGHT].setBrightness(0.9f); */
-                /*     lights[RAMP_LIGHT].setBrightness(0.9f); */
-                /*     break; */
-                case LOW:
-                default:
-                    /* state = RAMP_UP; */
-                    state = HIGH;
-                    fadeTimeEllapsed = 0.f;
+                case RAMP_UP:
+                    state = RAMP_DOWN;
+                    exchangeFades();
+                    lights[MUTE_LIGHT].setBrightness(0.f);
+                    lights[RAMP_LIGHT].setBrightness(0.9f);
+                    break;
+                case RAMP_DOWN:
+                    state = RAMP_UP;
+                    exchangeFades();
                     lights[MUTE_LIGHT].setBrightness(0.9f);
                     lights[RAMP_LIGHT].setBrightness(0.9f);
+                    break;
+                case LOW:
+                    state = RAMP_UP;
+                    fadeOutTime = rampTime();
+                    fadeInTime = 0.f;
+                    lights[MUTE_LIGHT].setBrightness(0.9f);
+                    lights[RAMP_LIGHT].setBrightness(0.9f);
+                    break;
+                default:
+                    printf("*** NO STATE WHEN TRIGGERED!\n");
                     break;
             }
         }
     }
 
+    // This is useful when we trigger a RAMP_UP from a RAMP_DOWN state
+    // and vice versa. We exchange fade-in and fade-out to (kind of)
+    // move backward.
+    void exchangeFades() {
+        float temp = fadeInTime;
+        fadeInTime = fadeOutTime;
+        fadeOutTime = temp;
+    }
+
+    // The time of the fade-in/out, as set by the user.
     float rampTime() {
         float time = params[FADE_PARAM].getValue();
         int mult = (int) std::round(params[SCALE_PARAM].getValue());
@@ -141,14 +163,7 @@ struct TwoByTwo : Module {
         return time;
     }
 
-    // XXX Useful?
-    float rampFromOneAnotherTime() {
-        float rt = rampTime();
-        float ratio = fadeTimeEllapsed / rt;
-        return rt * ratio;
-    }
-
-    // Play group 1.
+    // Play group 1, full amplitude.
     void high() {
         if (inputs[IN_INPUTS + 0].isConnected() &&
                outputs[OUT_OUTPUTS + 0].isConnected()) {
@@ -160,7 +175,7 @@ struct TwoByTwo : Module {
         }
     }
     //
-    // Play group 2.
+    // Play group 2, full amplitude.
     void low() {
         if (inputs[IN_INPUTS + 2].isConnected() &&
                outputs[OUT_OUTPUTS + 2].isConnected()) {
@@ -172,67 +187,67 @@ struct TwoByTwo : Module {
         }
     }
 
-    /* void rampUp(float sampleTime, int channelA, int channelB) { */
-    /*     fadeTimeEllapsed += sampleTime; */
-    /*     float userValue = rampTime(); */
-    /*     float mult = fadeTimeEllapsed / userValue; */
-    /*     mult = clamp(mult, 0.f, 1.f); */
+    // Fade-in the 2 inputs of a given group.
+    void rampUp(float sampleTime, int channelA, int channelB) {
+        fadeInTime += sampleTime;
+        float userValue = rampTime();
+        float mult = fadeInTime / userValue;
+        mult = clamp(mult, 0.f, 1.f);
 
-    /*     if (exponentialFade) { */
-    /*         mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f); */
-    /*     } */
+        if (exponentialFade) {
+            mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
+        }
 
-    /*     if (inputs[IN_INPUTS + channelA].isConnected() && */
-    /*            outputs[OUT_OUTPUTS + channelA].isConnected()) { */
-    /*         outputs[OUT_OUTPUTS + channelA].setVoltage( */
-    /*                 inputs[IN_INPUTS + channelA].getVoltage() * mult); */
-    /*     } */
-    /*     if (inputs[IN_INPUTS + channelB].isConnected() && */
-    /*            outputs[OUT_OUTPUTS + channelB].isConnected()) { */
-    /*         outputs[OUT_OUTPUTS + channelB].setVoltage( */
-    /*                 inputs[IN_INPUTS + channelB].getVoltage() * mult); */
-    /*     } */
-    /*     if (fadeTimeEllapsed >= userValue) { */
-    /*         if (state == RAMP_UP) { */
-    /*             state = HIGH; */
-    /*         } */
-    /*         lights[RAMP_LIGHT].setBrightness(0.f); */
-    /*     } else { */
-    /*         lights[RAMP_LIGHT].setBrightness(1.f - (mult)); */
-    /*     } */
-    /* } */
+        if (inputs[IN_INPUTS + channelA].isConnected() &&
+               outputs[OUT_OUTPUTS + channelA].isConnected()) {
+            outputs[OUT_OUTPUTS + channelA].setVoltage(
+                    inputs[IN_INPUTS + channelA].getVoltage() * mult);
+        }
+        if (inputs[IN_INPUTS + channelB].isConnected() &&
+               outputs[OUT_OUTPUTS + channelB].isConnected()) {
+            outputs[OUT_OUTPUTS + channelB].setVoltage(
+                    inputs[IN_INPUTS + channelB].getVoltage() * mult);
+        }
+        if (fadeInTime >= userValue) {
+            if (state == RAMP_UP) {
+                state = HIGH;
+                lights[RAMP_LIGHT].setBrightness(0.f);
+            }
+        }
+    }
 
-    /* void rampDown(float sampleTime, int channelA, int channelB) { */
-    /*     fadeTimeEllapsed -= sampleTime; */
-    /*     float userValue = rampTime(); */
-    /*     float mult = fadeTimeEllapsed / userValue; */
-    /*     mult = clamp(mult, 0.f, 1.f); */
+    // Fade-out the 2 inputs of a given group.
+    void rampDown(float sampleTime, int channelA, int channelB) {
+        fadeOutTime -= sampleTime;
+        float userValue = rampTime();
+        float mult = fadeOutTime / userValue;
+        mult = clamp(mult, 0.f, 1.f);
 
-    /*     if (exponentialFade) { */
-    /*         mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f); */
-    /*     } */
+        if (exponentialFade) {
+            mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
+        }
 
-    /*     if (inputs[IN_INPUTS + channelA].isConnected() && */
-    /*            outputs[OUT_OUTPUTS + channelA].isConnected()) { */
-    /*         outputs[OUT_OUTPUTS + channelA].setVoltage( */
-    /*                 inputs[IN_INPUTS + channelA].getVoltage() * mult); */
-    /*     } */
+        if (inputs[IN_INPUTS + channelA].isConnected() &&
+               outputs[OUT_OUTPUTS + channelA].isConnected()) {
+            outputs[OUT_OUTPUTS + channelA].setVoltage(
+                    inputs[IN_INPUTS + channelA].getVoltage() * mult);
+        }
 
-    /*     if (inputs[IN_INPUTS + channelB].isConnected() && */
-    /*            outputs[OUT_OUTPUTS + channelB].isConnected()) { */
-    /*         outputs[OUT_OUTPUTS + channelB].setVoltage( */
-    /*                 inputs[IN_INPUTS + channelB].getVoltage() * mult); */
-    /*     } */
+        if (inputs[IN_INPUTS + channelB].isConnected() &&
+               outputs[OUT_OUTPUTS + channelB].isConnected()) {
+            outputs[OUT_OUTPUTS + channelB].setVoltage(
+                    inputs[IN_INPUTS + channelB].getVoltage() * mult);
+        }
 
-    /*     if (fadeTimeEllapsed <= 0.f) { */
-    /*         if (state == RAMP_DOWN) { */
-    /*             state = LOW; */
-    /*         } */
-    /*         lights[RAMP_LIGHT].setBrightness(0.f); */
-    /*     } else { */
-    /*         lights[RAMP_LIGHT].setBrightness(mult); */
-    /*     } */
-    /* } */
+        if (fadeOutTime <= 0.f) {
+            if (state == RAMP_DOWN) {
+                state = LOW;
+                lights[RAMP_LIGHT].setBrightness(0.f);
+            }
+        } else {
+            lights[RAMP_LIGHT].setBrightness(mult);
+        }
+    }
 
 };
 
