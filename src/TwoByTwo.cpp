@@ -1,6 +1,5 @@
 #include "plugin.hpp"
 
-
 struct TwoByTwo : Module {
 
     const float PRESET_FADE = 0.1;
@@ -355,6 +354,5 @@ struct TwoByTwoWidget : ModuleWidget {
     }
 
 };
-
 
 Model* modelTwoByTwo = createModel<TwoByTwo, TwoByTwoWidget>("TwoByTwo");
