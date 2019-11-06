@@ -71,9 +71,6 @@ struct TwoByTwo : Module {
 
         switch(state) {
             case HIGH:
-                lights[MUTE_LIGHT].setBrightness(0.9f);
-                lights[GROUP1_LIGHT].setBrightness(0.9f);
-                lights[GROUP2_LIGHT].setBrightness(0.f);
                 high();
                 break;
             case RAMP_UP:
@@ -89,15 +86,19 @@ struct TwoByTwo : Module {
                 rampUp(args.sampleTime, 2, 3);
                 break;
             case LOW:
-                lights[MUTE_LIGHT].setBrightness(0.f);
-                lights[GROUP1_LIGHT].setBrightness(0.f);
-                lights[GROUP2_LIGHT].setBrightness(0.9f);
                 low();
                 break;
             default:
                 printf("*** NO STATE :(((\n");
                 break;
         }
+    }
+
+    void setLights(float muteL, float rampL, float group1L, float group2L) {
+        lights[MUTE_LIGHT].setBrightness(muteL);
+        lights[RAMP_LIGHT].setBrightness(rampL);
+        lights[GROUP1_LIGHT].setBrightness(group1L);
+        lights[GROUP2_LIGHT].setBrightness(group2L);
     }
 
     void setState() {
@@ -108,27 +109,23 @@ struct TwoByTwo : Module {
                     state = RAMP_DOWN;
                     fadeOutTime = rampTime();
                     fadeInTime = 0.f;
-                    lights[MUTE_LIGHT].setBrightness(0.f);
-                    lights[RAMP_LIGHT].setBrightness(0.9f);
+                    setLights(0.f, 0.9f, 0.f, 0.9f);
                     break;
                 case RAMP_UP:
                     state = RAMP_DOWN;
                     exchangeFades();
-                    lights[MUTE_LIGHT].setBrightness(0.f);
-                    lights[RAMP_LIGHT].setBrightness(0.9f);
+                    setLights(0.f, 0.9f, 0.f, 0.9f);
                     break;
                 case RAMP_DOWN:
                     state = RAMP_UP;
                     exchangeFades();
-                    lights[MUTE_LIGHT].setBrightness(0.9f);
-                    lights[RAMP_LIGHT].setBrightness(0.9f);
+                    setLights(0.9f, 0.9f, 0.9f, 0.f);
                     break;
                 case LOW:
                     state = RAMP_UP;
                     fadeOutTime = rampTime();
                     fadeInTime = 0.f;
-                    lights[MUTE_LIGHT].setBrightness(0.9f);
-                    lights[RAMP_LIGHT].setBrightness(0.9f);
+                    setLights(0.9f, 0.9f, 0.9f, 0.f);
                     break;
                 default:
                     printf("*** NO STATE WHEN TRIGGERED!\n");
@@ -165,25 +162,29 @@ struct TwoByTwo : Module {
 
     // Play group 1, full amplitude.
     void high() {
-        if (inputs[IN_INPUTS + 0].isConnected() &&
-               outputs[OUT_OUTPUTS + 0].isConnected()) {
-            outputs[OUT_OUTPUTS + 0].setVoltage(inputs[IN_INPUTS + 0].getVoltage());
-        }
-        if (inputs[IN_INPUTS + 1].isConnected() &&
-               outputs[OUT_OUTPUTS + 1].isConnected()) {
-            outputs[OUT_OUTPUTS + 1].setVoltage(inputs[IN_INPUTS + 1].getVoltage());
-        }
+        playFullInput(0);
+        playFullInput(1);
     }
-    //
+
     // Play group 2, full amplitude.
     void low() {
-        if (inputs[IN_INPUTS + 2].isConnected() &&
-               outputs[OUT_OUTPUTS + 2].isConnected()) {
-            outputs[OUT_OUTPUTS + 2].setVoltage(inputs[IN_INPUTS + 2].getVoltage());
+        playFullInput(2);
+        playFullInput(3);
+    }
+
+    inline void playFullInput(int inputNumber) {
+        if (inputs[IN_INPUTS + inputNumber].isConnected() &&
+               outputs[OUT_OUTPUTS + inputNumber].isConnected()) {
+            outputs[OUT_OUTPUTS + inputNumber].setVoltage(
+                    inputs[IN_INPUTS + inputNumber].getVoltage());
         }
-        if (inputs[IN_INPUTS + 3].isConnected() &&
-               outputs[OUT_OUTPUTS + 3].isConnected()) {
-            outputs[OUT_OUTPUTS + 3].setVoltage(inputs[IN_INPUTS + 3].getVoltage());
+    }
+
+    inline void playPartInput(int inputNumber, float mult) {
+        if (inputs[IN_INPUTS + inputNumber].isConnected() &&
+               outputs[OUT_OUTPUTS + inputNumber].isConnected()) {
+            outputs[OUT_OUTPUTS + inputNumber].setVoltage(
+                    inputs[IN_INPUTS + inputNumber].getVoltage() * mult);
         }
     }
 
@@ -198,16 +199,9 @@ struct TwoByTwo : Module {
             mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
         }
 
-        if (inputs[IN_INPUTS + channelA].isConnected() &&
-               outputs[OUT_OUTPUTS + channelA].isConnected()) {
-            outputs[OUT_OUTPUTS + channelA].setVoltage(
-                    inputs[IN_INPUTS + channelA].getVoltage() * mult);
-        }
-        if (inputs[IN_INPUTS + channelB].isConnected() &&
-               outputs[OUT_OUTPUTS + channelB].isConnected()) {
-            outputs[OUT_OUTPUTS + channelB].setVoltage(
-                    inputs[IN_INPUTS + channelB].getVoltage() * mult);
-        }
+        playPartInput(channelA, mult);
+        playPartInput(channelB, mult);
+
         if (fadeInTime >= userValue) {
             if (state == RAMP_UP) {
                 state = HIGH;
@@ -227,17 +221,8 @@ struct TwoByTwo : Module {
             mult = rescale(std::pow(50.f, mult), 1.f, 50.f, 0.f, 1.f);
         }
 
-        if (inputs[IN_INPUTS + channelA].isConnected() &&
-               outputs[OUT_OUTPUTS + channelA].isConnected()) {
-            outputs[OUT_OUTPUTS + channelA].setVoltage(
-                    inputs[IN_INPUTS + channelA].getVoltage() * mult);
-        }
-
-        if (inputs[IN_INPUTS + channelB].isConnected() &&
-               outputs[OUT_OUTPUTS + channelB].isConnected()) {
-            outputs[OUT_OUTPUTS + channelB].setVoltage(
-                    inputs[IN_INPUTS + channelB].getVoltage() * mult);
-        }
+        playPartInput(channelA, mult);
+        playPartInput(channelB, mult);
 
         if (fadeOutTime <= 0.f) {
             if (state == RAMP_DOWN) {
@@ -264,8 +249,10 @@ struct TwoByTwo : Module {
             float value = json_integer_value(stateJ);
             if (value == 1) {
                 state = HIGH;
+                setLights(0.9f, 0.f, 0.9f, 0.f);
             } else {
                 state = LOW;
+                setLights(0.f, 0.f, 0.f, 0.9f);
             }
         }
 
