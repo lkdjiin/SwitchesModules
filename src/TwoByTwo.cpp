@@ -249,6 +249,31 @@ struct TwoByTwo : Module {
         }
     }
 
+    json_t *dataToJson() override {
+        float value;
+        value = (state == HIGH || state == RAMP_UP) ? 1 : 0;
+        json_t *rootJ = json_object();
+        json_object_set_new(rootJ, "state", json_integer(value));
+        json_object_set_new(rootJ, "exponentialFade", json_integer((int) exponentialFade));
+        return rootJ;
+    }
+
+    void dataFromJson(json_t *rootJ) override {
+        json_t *stateJ = json_object_get(rootJ, "state");
+        if (stateJ) {
+            float value = json_integer_value(stateJ);
+            if (value == 1) {
+                state = HIGH;
+            } else {
+                state = LOW;
+            }
+        }
+
+        json_t *exponentialFadeJ = json_object_get(rootJ, "exponentialFade");
+        if (exponentialFadeJ) {
+            exponentialFade = json_integer_value(exponentialFadeJ);
+        }
+    }
 };
 
 template <typename BASE>
