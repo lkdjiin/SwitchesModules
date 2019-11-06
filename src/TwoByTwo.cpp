@@ -306,6 +306,42 @@ struct TwoByTwoWidget : ModuleWidget {
         addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(15.24, 67.0)),
                     module, TwoByTwo::GROUP2_LIGHT));
     }
+
+    struct TwoByTwoModeItem : MenuItem {
+        TwoByTwo *module;
+        bool mode;
+        void onAction(const event::Action &e) override {
+            module->exponentialFade = mode;
+        }
+        void step() override {
+            rightText = (module->exponentialFade == mode) ? "✔" : "";
+        }
+    };
+
+    void appendContextMenu(Menu *menu) override {
+        MenuLabel *spacerLabel = new MenuLabel();
+        menu->addChild(spacerLabel);
+
+        TwoByTwo *module = dynamic_cast<TwoByTwo*>(this->module);
+        assert(module);
+
+        MenuLabel *themeLabel = new MenuLabel();
+        themeLabel->text = "Audio Mode";
+        menu->addChild(themeLabel);
+
+        TwoByTwoModeItem *item1 = new TwoByTwoModeItem();
+        item1->text = "Exponential";
+        item1->module = module;
+        item1->mode = true;
+        menu->addChild(item1);
+
+        TwoByTwoModeItem *item2 = new TwoByTwoModeItem();
+        item2->text = "Linear";
+        item2->module = module;
+        item2->mode = false;
+        menu->addChild(item2);
+    }
+
 };
 
 
