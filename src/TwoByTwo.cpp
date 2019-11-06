@@ -42,7 +42,7 @@ struct TwoByTwo : Module {
     dsp::BooleanTrigger muteTrigger;
     float fadeInTime;
     float fadeOutTime;
-    bool exponentialFade = true; // If not it's linear.
+    bool exponentialFade = false; // If not it's linear.
 
     TwoByTwo() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
