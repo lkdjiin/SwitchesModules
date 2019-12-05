@@ -31,10 +31,7 @@ struct MatrixMixer4 : Module {
     };
 
     enum OutputIds {
-        OUT1_OUTPUT,
-        OUT2_OUTPUT,
-        OUT3_OUTPUT,
-        OUT4_OUTPUT,
+        ENUMS(OUT_OUTPUTS, 4),
         NUM_OUTPUTS
     };
 
@@ -73,27 +70,32 @@ struct MatrixMixer4 : Module {
     }
 
     void process(const ProcessArgs& args) override {
-        if (outputs[OUT1_OUTPUT].isConnected()) {
-            float out = 0.f;
-            int numOfConnections = 0;
+        for (int outputNumber = 0; outputNumber < 4; outputNumber++) {
+            if (outputs[OUT_OUTPUTS + outputNumber].isConnected()) {
+                float out = 0.f;
+                int numberOfConnections = 0;
 
-            for (int i = 0; i < 4; i++) {
-                if (inputs[IN_INPUTS + i].isConnected()) {
-                    out += inputs[IN_INPUTS + i].getVoltage() * params[POT_PARAMS + i].getValue();
-                    numOfConnections++;
+                for (int i = 0; i < 4; i++) {
+                    if (inputs[IN_INPUTS + i].isConnected()) {
+                        out += inputs[IN_INPUTS + i]
+                               .getVoltage() *
+                               params[POT_PARAMS + (4 * outputNumber) + i]
+                               .getValue();
+                        numberOfConnections++;
+                    }
                 }
-            }
 
-            if (numOfConnections == 2) {
-                out *= 0.5;
-            } else if (numOfConnections == 3) {
-                out *= 0.33333;
-            } else if (numOfConnections == 4) {
-                out *= 0.25;
-            }
+                if (numberOfConnections == 2) {
+                    out *= 0.5;
+                } else if (numberOfConnections == 3) {
+                    out *= 0.33333;
+                } else if (numberOfConnections == 4) {
+                    out *= 0.25;
+                }
 
-            /* out = clamp(out, -5.f, 5.f); */
-            outputs[OUT1_OUTPUT].setVoltage(out);
+                /* out = clamp(out, -5.f, 5.f); */
+                outputs[OUT_OUTPUTS + outputNumber].setVoltage(out);
+            }
         }
     }
 };
@@ -147,10 +149,10 @@ struct MatrixMixer4Widget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(77.51, 115.0)), module, MatrixMixer4::COL4_CV_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(93.6, 115.0)), module, MatrixMixer4::XOR_CV_INPUT));
 
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 35.5)), module, MatrixMixer4::OUT1_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 54.17)), module, MatrixMixer4::OUT2_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 72.84)), module, MatrixMixer4::OUT3_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 91.51)), module, MatrixMixer4::OUT4_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 35.5)), module, MatrixMixer4::OUT_OUTPUTS + 0));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 54.17)), module, MatrixMixer4::OUT_OUTPUTS + 1));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 72.84)), module, MatrixMixer4::OUT_OUTPUTS + 2));
+        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 91.51)), module, MatrixMixer4::OUT_OUTPUTS + 3));
 
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(33.5, 29.5)), module, MatrixMixer4::SMALL_LEDS + 0));
         addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(50.17, 29.5)), module, MatrixMixer4::SMALL_LEDS + 1));
