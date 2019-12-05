@@ -17,10 +17,7 @@ struct MatrixMixer4 : Module {
     };
 
     enum InputIds {
-        IN1_INPUT,
-        IN2_INPUT,
-        IN3_INPUT,
-        IN4_INPUT,
+        ENUMS(IN_INPUTS, 4),
         ROW1_CV_INPUT,
         ROW2_CV_INPUT,
         ROW3_CV_INPUT,
@@ -76,6 +73,28 @@ struct MatrixMixer4 : Module {
     }
 
     void process(const ProcessArgs& args) override {
+        if (outputs[OUT1_OUTPUT].isConnected()) {
+            float out = 0.f;
+            int numOfConnections = 0;
+
+            for (int i = 0; i < 4; i++) {
+                if (inputs[IN_INPUTS + i].isConnected()) {
+                    out += inputs[IN_INPUTS + i].getVoltage() * params[POT_PARAMS + i].getValue();
+                    numOfConnections++;
+                }
+            }
+
+            if (numOfConnections == 2) {
+                out *= 0.5;
+            } else if (numOfConnections == 3) {
+                out *= 0.33333;
+            } else if (numOfConnections == 4) {
+                out *= 0.25;
+            }
+
+            /* out = clamp(out, -5.f, 5.f); */
+            outputs[OUT1_OUTPUT].setVoltage(out);
+        }
     }
 };
 
@@ -114,10 +133,10 @@ struct MatrixMixer4Widget : ModuleWidget {
         addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(60.84, 91.51)), module, MatrixMixer4::POT_PARAMS + 14));
         addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(77.51, 91.51)), module, MatrixMixer4::POT_PARAMS + 15));
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(27.5, 19.5)), module, MatrixMixer4::IN1_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(44.17, 19.5)), module, MatrixMixer4::IN2_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(60.84, 19.5)), module, MatrixMixer4::IN3_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(77.51, 19.5)), module, MatrixMixer4::IN4_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(27.5, 19.5)), module, MatrixMixer4::IN_INPUTS + 0));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(44.17, 19.5)), module, MatrixMixer4::IN_INPUTS + 1));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(60.84, 19.5)), module, MatrixMixer4::IN_INPUTS + 2));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(77.51, 19.5)), module, MatrixMixer4::IN_INPUTS + 3));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.804, 35.5)), module, MatrixMixer4::ROW1_CV_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.388, 54.17)), module, MatrixMixer4::ROW2_CV_INPUT));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.426, 72.84)), module, MatrixMixer4::ROW3_CV_INPUT));
