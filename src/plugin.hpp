@@ -11,3 +11,4 @@ extern Plugin* pluginInstance;
 // extern Model* modelMyModule;
 extern Model* modelDoubleMute;
 extern Model* modelTwoByTwo;
+extern Model* modelMatrixMixer4;

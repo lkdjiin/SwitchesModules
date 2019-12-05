@@ -28,6 +28,14 @@
       "tags": [
         "switch"
       ]
+    },
+    {
+      "slug": "MatrixMixer4",
+      "name": "MatrixMixer4",
+      "description": "4 in 4 out matrix mixer",
+      "tags": [
+        "mixer"
+      ]
     }
   ]
 }
