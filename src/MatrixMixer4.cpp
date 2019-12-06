@@ -37,17 +37,41 @@ struct MatrixMixer4 : Module {
 
     enum LightIds {
         ENUMS(SMALL_LEDS, 16),
-        ROW1_LIGHT,
-        ROW2_LIGHT,
-        ROW3_LIGHT,
-        ROW4_LIGHT,
-        COL1_LIGHT,
-        COL2_LIGHT,
-        COL3_LIGHT,
-        COL4_LIGHT,
-        XOR_LIGHT,
         NUM_LIGHTS
     };
+
+    dsp::BooleanTrigger muteTrigger;
+    bool ledMatrix[16];
+    bool row1State;
+    bool row2State;
+    bool row3State;
+    bool row4State;
+    bool col1State;
+    bool col2State;
+    bool col3State;
+    bool col4State;
+
+    void onAdd() override {
+        reset();
+    }
+
+    void onReset() override {
+        reset();
+    }
+
+    void reset() {
+        for (int i = 0; i < 16; i++) {
+            ledMatrix[i] = true;
+        }
+        row1State = true;
+        row2State = true;
+        row3State = true;
+        row4State = true;
+        col1State = true;
+        col2State = true;
+        col3State = true;
+        col4State = true;
+    }
 
     MatrixMixer4() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -67,16 +91,35 @@ struct MatrixMixer4 : Module {
         configParam(POT_PARAMS + 13, 0.f, 1.f, 0.5f, "Row 4 Col 2");
         configParam(POT_PARAMS + 14, 0.f, 1.f, 0.5f, "Row 4 Col 3");
         configParam(POT_PARAMS + 15, 0.f, 1.f, 0.5f, "Row 4 Col 4");
+        configParam(ROW1_PARAM, 0.0, 1.0, 0.0, "Mute row 1");
+        configParam(ROW2_PARAM, 0.0, 1.0, 0.0, "Mute row 2");
+        configParam(ROW3_PARAM, 0.0, 1.0, 0.0, "Mute row 3");
+        configParam(ROW4_PARAM, 0.0, 1.0, 0.0, "Mute row 4");
+        configParam(COL1_PARAM, 0.0, 1.0, 0.0, "Mute col 1");
+        configParam(COL2_PARAM, 0.0, 1.0, 0.0, "Mute col 2");
+        configParam(COL3_PARAM, 0.0, 1.0, 0.0, "Mute col 3");
+        configParam(COL4_PARAM, 0.0, 1.0, 0.0, "Mute col 4");
+        configParam(XOR_PARAM, 0.0, 1.0, 0.0, "Xor mode");
     }
 
     void process(const ProcessArgs& args) override {
+
+        for (int i = 0; i < 16; i++) {
+            if (ledMatrix[i]) {
+                lights[SMALL_LEDS + i].setBrightness(0.9f);
+            } else {
+                lights[SMALL_LEDS + i].setBrightness(0.f);
+            }
+        }
+
         for (int outputNumber = 0; outputNumber < 4; outputNumber++) {
             if (outputs[OUT_OUTPUTS + outputNumber].isConnected()) {
                 float out = 0.f;
                 int numberOfConnections = 0;
 
                 for (int i = 0; i < 4; i++) {
-                    if (inputs[IN_INPUTS + i].isConnected()) {
+                    if (inputs[IN_INPUTS + i].isConnected() &&
+                            ledMatrix[4 * outputNumber + i]) {
                         out += inputs[IN_INPUTS + i]
                                .getVoltage() *
                                params[POT_PARAMS + (4 * outputNumber) + i]
@@ -97,7 +140,15 @@ struct MatrixMixer4 : Module {
                 outputs[OUT_OUTPUTS + outputNumber].setVoltage(out);
             }
         }
+
+        if (muteTrigger.process(params[ROW1_PARAM].getValue() > 0.f)) {
+            row1State = !row1State;
+            for (int i = 0; i < 4; i++) {
+                ledMatrix[i] = !ledMatrix[i] && row1State;
+            }
+        }
     }
+
 };
 
 
@@ -154,42 +205,33 @@ struct MatrixMixer4Widget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 72.84)), module, MatrixMixer4::OUT_OUTPUTS + 2));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 91.51)), module, MatrixMixer4::OUT_OUTPUTS + 3));
 
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(33.5, 29.5)), module, MatrixMixer4::SMALL_LEDS + 0));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(50.17, 29.5)), module, MatrixMixer4::SMALL_LEDS + 1));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(66.84, 29.5)), module, MatrixMixer4::SMALL_LEDS + 2));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(83.51, 29.5)), module, MatrixMixer4::SMALL_LEDS + 3));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(33.5, 48.17)), module, MatrixMixer4::SMALL_LEDS + 4));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(50.17, 48.17)), module, MatrixMixer4::SMALL_LEDS + 5));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(66.84, 48.17)), module, MatrixMixer4::SMALL_LEDS + 6));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(83.51, 48.17)), module, MatrixMixer4::SMALL_LEDS + 7));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(33.5, 66.84)), module, MatrixMixer4::SMALL_LEDS + 8));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(50.17, 66.84)), module, MatrixMixer4::SMALL_LEDS + 9));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(66.84, 66.84)), module, MatrixMixer4::SMALL_LEDS + 10));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(83.51, 66.84)), module, MatrixMixer4::SMALL_LEDS + 11));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(33.5, 85.51)), module, MatrixMixer4::SMALL_LEDS + 12));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(50.17, 85.51)), module, MatrixMixer4::SMALL_LEDS + 13));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(66.84, 85.51)), module, MatrixMixer4::SMALL_LEDS + 14));
-        addChild(createLightCentered<SmallLight<RedLight>>(mm2px(Vec(83.51, 85.51)), module, MatrixMixer4::SMALL_LEDS + 15));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(33.5, 29.5)), module, MatrixMixer4::SMALL_LEDS + 0));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(50.17, 29.5)), module, MatrixMixer4::SMALL_LEDS + 1));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(66.84, 29.5)), module, MatrixMixer4::SMALL_LEDS + 2));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(83.51, 29.5)), module, MatrixMixer4::SMALL_LEDS + 3));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(33.5, 48.17)), module, MatrixMixer4::SMALL_LEDS + 4));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(50.17, 48.17)), module, MatrixMixer4::SMALL_LEDS + 5));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(66.84, 48.17)), module, MatrixMixer4::SMALL_LEDS + 6));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(83.51, 48.17)), module, MatrixMixer4::SMALL_LEDS + 7));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(33.5, 66.84)), module, MatrixMixer4::SMALL_LEDS + 8));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(50.17, 66.84)), module, MatrixMixer4::SMALL_LEDS + 9));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(66.84, 66.84)), module, MatrixMixer4::SMALL_LEDS + 10));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(83.51, 66.84)), module, MatrixMixer4::SMALL_LEDS + 11));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(33.5, 85.51)), module, MatrixMixer4::SMALL_LEDS + 12));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(50.17, 85.51)), module, MatrixMixer4::SMALL_LEDS + 13));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(66.84, 85.51)), module, MatrixMixer4::SMALL_LEDS + 14));
+        addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(83.51, 85.51)), module, MatrixMixer4::SMALL_LEDS + 15));
 
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(15.913, 35.5)), module, MatrixMixer4::ROW1_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(15.573, 54.17)), module, MatrixMixer4::ROW2_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(15.497, 72.84)), module, MatrixMixer4::ROW3_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(15.497, 91.51)), module, MatrixMixer4::ROW4_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(27.5, 105.9)), module, MatrixMixer4::COL1_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(44.17, 105.9)), module, MatrixMixer4::COL2_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(60.84, 105.9)), module, MatrixMixer4::COL3_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(77.51, 105.9)), module, MatrixMixer4::COL4_PARAM));
-        addChild(createParamCentered<LEDBezel>(mm2px(Vec(93.6, 105.9)), module, MatrixMixer4::XOR_PARAM));
 
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.913, 35.5)), module, MatrixMixer4::ROW1_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.573, 54.17)), module, MatrixMixer4::ROW2_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.497, 72.84)), module, MatrixMixer4::ROW3_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(15.497, 91.51)), module, MatrixMixer4::ROW4_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(27.5, 105.9)), module, MatrixMixer4::COL1_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(44.17, 105.9)), module, MatrixMixer4::COL2_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(60.84, 105.9)), module, MatrixMixer4::COL3_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(77.51, 105.9)), module, MatrixMixer4::COL4_LIGHT));
-        addChild(createLightCentered<MuteLight<GreenLight>>(mm2px(Vec(93.6, 105.90)), module, MatrixMixer4::XOR_LIGHT));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.913, 35.5)), module, MatrixMixer4::ROW1_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.573, 54.17)), module, MatrixMixer4::ROW2_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.497, 72.84)), module, MatrixMixer4::ROW3_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.497, 91.51)), module, MatrixMixer4::ROW4_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(27.5, 105.9)), module, MatrixMixer4::COL1_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(44.17, 105.9)), module, MatrixMixer4::COL2_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(60.84, 105.9)), module, MatrixMixer4::COL3_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(77.51, 105.9)), module, MatrixMixer4::COL4_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(93.6, 105.9)), module, MatrixMixer4::XOR_PARAM));
     }
 };
 
