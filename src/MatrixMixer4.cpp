@@ -37,7 +37,6 @@ struct MatrixMixer4 : Module {
     bool colState[4];
 
     void onAdd() override {
-        reset();
     }
 
     void onReset() override {
@@ -166,6 +165,58 @@ struct MatrixMixer4 : Module {
         }
     }
 
+    json_t *dataToJson() override {
+        json_t *rootJ = json_object();
+
+        json_t* ledsJ = json_array();
+        for (int i = 0; i < 16; i++) {
+            json_t* ledJ = json_boolean(ledMatrix[i]);
+            json_array_append_new(ledsJ, ledJ);
+        }
+        json_object_set_new(rootJ, "leds", ledsJ);
+
+        json_t* rowsJ = json_array();
+        for (int i = 0; i < 4; i++) {
+            json_t* rowJ = json_boolean(rowState[i]);
+            json_array_append_new(rowsJ, rowJ);
+        }
+        json_object_set_new(rootJ, "rows", rowsJ);
+
+        json_t* colsJ = json_array();
+        for (int i = 0; i < 4; i++) {
+            json_t* colJ = json_boolean(colState[i]);
+            json_array_append_new(colsJ, colJ);
+        }
+        json_object_set_new(rootJ, "cols", colsJ);
+
+        return rootJ;
+    }
+
+    void dataFromJson(json_t* rootJ) override {
+        json_t* ledsJ = json_object_get(rootJ, "leds");
+        if (ledsJ) {
+            for (int i = 0; i < 16; i++) {
+                json_t* ledJ = json_array_get(ledsJ, i);
+                if (ledJ) ledMatrix[i] = json_boolean_value(ledJ);
+            }
+        }
+
+        json_t* rowsJ = json_object_get(rootJ, "rows");
+        if (rowsJ) {
+            for (int i = 0; i < 4; i++) {
+                json_t* rowJ = json_array_get(rowsJ, i);
+                if (rowJ) rowState[i] = json_boolean_value(rowJ);
+            }
+        }
+
+        json_t* colsJ = json_object_get(rootJ, "cols");
+        if (colsJ) {
+            for (int i = 0; i < 4; i++) {
+                json_t* colJ = json_array_get(colsJ, i);
+                if (colJ) colState[i] = json_boolean_value(colJ);
+            }
+        }
+    }
 };
 
 
