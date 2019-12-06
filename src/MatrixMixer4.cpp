@@ -4,10 +4,7 @@ struct MatrixMixer4 : Module {
 
     enum ParamIds {
         ENUMS(POT_PARAMS, 16),
-        ROW1_PARAM,
-        ROW2_PARAM,
-        ROW3_PARAM,
-        ROW4_PARAM,
+        ENUMS(ROW_PARAMS, 4),
         COL1_PARAM,
         COL2_PARAM,
         COL3_PARAM,
@@ -40,12 +37,9 @@ struct MatrixMixer4 : Module {
         NUM_LIGHTS
     };
 
-    dsp::BooleanTrigger muteTrigger;
+    dsp::BooleanTrigger muteTrigger[4];
     bool ledMatrix[16];
-    bool row1State;
-    bool row2State;
-    bool row3State;
-    bool row4State;
+    bool rowState[4];
     bool col1State;
     bool col2State;
     bool col3State;
@@ -63,10 +57,10 @@ struct MatrixMixer4 : Module {
         for (int i = 0; i < 16; i++) {
             ledMatrix[i] = true;
         }
-        row1State = true;
-        row2State = true;
-        row3State = true;
-        row4State = true;
+        rowState[0] = true;
+        rowState[1] = true;
+        rowState[2] = true;
+        rowState[3] = true;
         col1State = true;
         col2State = true;
         col3State = true;
@@ -91,10 +85,10 @@ struct MatrixMixer4 : Module {
         configParam(POT_PARAMS + 13, 0.f, 1.f, 0.5f, "Row 4 Col 2");
         configParam(POT_PARAMS + 14, 0.f, 1.f, 0.5f, "Row 4 Col 3");
         configParam(POT_PARAMS + 15, 0.f, 1.f, 0.5f, "Row 4 Col 4");
-        configParam(ROW1_PARAM, 0.0, 1.0, 0.0, "Mute row 1");
-        configParam(ROW2_PARAM, 0.0, 1.0, 0.0, "Mute row 2");
-        configParam(ROW3_PARAM, 0.0, 1.0, 0.0, "Mute row 3");
-        configParam(ROW4_PARAM, 0.0, 1.0, 0.0, "Mute row 4");
+        configParam(ROW_PARAMS + 0, 0.0, 1.0, 0.0, "Mute row 1");
+        configParam(ROW_PARAMS + 1, 0.0, 1.0, 0.0, "Mute row 2");
+        configParam(ROW_PARAMS + 2, 0.0, 1.0, 0.0, "Mute row 3");
+        configParam(ROW_PARAMS + 3, 0.0, 1.0, 0.0, "Mute row 4");
         configParam(COL1_PARAM, 0.0, 1.0, 0.0, "Mute col 1");
         configParam(COL2_PARAM, 0.0, 1.0, 0.0, "Mute col 2");
         configParam(COL3_PARAM, 0.0, 1.0, 0.0, "Mute col 3");
@@ -141,12 +135,16 @@ struct MatrixMixer4 : Module {
             }
         }
 
-        if (muteTrigger.process(params[ROW1_PARAM].getValue() > 0.f)) {
-            row1State = !row1State;
-            for (int i = 0; i < 4; i++) {
-                ledMatrix[i] = !ledMatrix[i] && row1State;
+        for (int row = 0; row < 4; row++) {
+            if (muteTrigger[row].process(params[ROW_PARAMS + row].getValue() > 0.f)) {
+                rowState[row] = !rowState[row];
+                for (int i = 0; i < 4; i++) {
+                    int aLed = 4 * row + i;
+                    ledMatrix[aLed] = !ledMatrix[aLed] && rowState[row];
+                }
             }
         }
+
     }
 
 };
@@ -223,10 +221,10 @@ struct MatrixMixer4Widget : ModuleWidget {
         addChild(createLightCentered<SmallLight<GreenLight>>(mm2px(Vec(83.51, 85.51)), module, MatrixMixer4::SMALL_LEDS + 15));
 
 
-        addChild(createParamCentered<TL1105>(mm2px(Vec(15.913, 35.5)), module, MatrixMixer4::ROW1_PARAM));
-        addChild(createParamCentered<TL1105>(mm2px(Vec(15.573, 54.17)), module, MatrixMixer4::ROW2_PARAM));
-        addChild(createParamCentered<TL1105>(mm2px(Vec(15.497, 72.84)), module, MatrixMixer4::ROW3_PARAM));
-        addChild(createParamCentered<TL1105>(mm2px(Vec(15.497, 91.51)), module, MatrixMixer4::ROW4_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.913, 35.5)), module, MatrixMixer4::ROW_PARAMS + 0));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.573, 54.17)), module, MatrixMixer4::ROW_PARAMS + 1));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.497, 72.84)), module, MatrixMixer4::ROW_PARAMS + 2));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(15.497, 91.51)), module, MatrixMixer4::ROW_PARAMS + 3));
         addChild(createParamCentered<TL1105>(mm2px(Vec(27.5, 105.9)), module, MatrixMixer4::COL1_PARAM));
         addChild(createParamCentered<TL1105>(mm2px(Vec(44.17, 105.9)), module, MatrixMixer4::COL2_PARAM));
         addChild(createParamCentered<TL1105>(mm2px(Vec(60.84, 105.9)), module, MatrixMixer4::COL3_PARAM));
