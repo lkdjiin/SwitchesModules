@@ -135,7 +135,7 @@ struct MatrixMixer4 : Module {
                 rowState[row] = !rowState[row];
                 for (int i = 0; i < 4; i++) {
                     int aLed = 4 * row + i;
-                    ledMatrix[aLed] = !ledMatrix[aLed] && rowState[row];
+                    ledMatrix[aLed] = rowState[row];
                 }
             }
         }
@@ -145,7 +145,7 @@ struct MatrixMixer4 : Module {
                 colState[col] = !colState[col];
                 for (int i = 0; i < 4; i++) {
                     int aLed = col + i * 4;
-                    ledMatrix[aLed] = !ledMatrix[aLed] && colState[col];
+                    ledMatrix[aLed] = colState[col];
                 }
             }
         }
