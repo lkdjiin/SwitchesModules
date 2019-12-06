@@ -48,14 +48,10 @@ struct MatrixMixer4 : Module {
         for (int i = 0; i < 16; i++) {
             ledMatrix[i] = true;
         }
-        rowState[0] = true;
-        rowState[1] = true;
-        rowState[2] = true;
-        rowState[3] = true;
-        colState[0] = true;
-        colState[1] = true;
-        colState[2] = true;
-        colState[3] = true;
+        for (int i = 0; i < 4; i++) {
+            rowState[i] = true;
+            colState[i] = true;
+        }
     }
 
     MatrixMixer4() {
@@ -88,7 +84,12 @@ struct MatrixMixer4 : Module {
     }
 
     void process(const ProcessArgs& args) override {
+        lightTheLeds();
+        setAudio();
+        setLightsState();
+    }
 
+    void lightTheLeds() {
         for (int i = 0; i < 16; i++) {
             if (ledMatrix[i]) {
                 lights[SMALL_LEDS + i].setBrightness(0.9f);
@@ -108,7 +109,9 @@ struct MatrixMixer4 : Module {
                 lights[COL_LEDS + i].setBrightness(0.f);
             }
         }
+    }
 
+    void setAudio() {
         for (int outputNumber = 0; outputNumber < 4; outputNumber++) {
             if (outputs[OUT_OUTPUTS + outputNumber].isConnected()) {
                 float out = 0.f;
@@ -137,7 +140,9 @@ struct MatrixMixer4 : Module {
                 outputs[OUT_OUTPUTS + outputNumber].setVoltage(out);
             }
         }
+    }
 
+    void setLightsState() {
         for (int row = 0; row < 4; row++) {
             if (rowTrigger[row].process(params[ROW_PARAMS + row].getValue() > 0.f) ||
                    inputs[ROW_CV_INPUTS + row].getNormalVoltage(0.f) > 0.f) {
