@@ -33,6 +33,7 @@ struct MatrixMixer4 : Module {
     // Amplitude algorithm:
     //   0 - Ducking (the more voices in a row, the less amplitude per voice)
     //   1 - Hard clipping 10 Vpp
+    //   2 - No processing
     int amplitudeAlgorithm = 0;
 
     dsp::BooleanTrigger rowTrigger[4];
@@ -360,6 +361,12 @@ struct MatrixMixer4Widget : ModuleWidget {
         item2->module = module;
         item2->algo = 1;
         menu->addChild(item2);
+
+        MatrixMixer4AmplitudeItem *item3 = new MatrixMixer4AmplitudeItem();
+        item3->text = "No processing";
+        item3->module = module;
+        item3->algo = 2;
+        menu->addChild(item3);
     }
 };
 
