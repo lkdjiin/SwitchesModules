@@ -30,6 +30,11 @@ struct MatrixMixer4 : Module {
         NUM_LIGHTS
     };
 
+    // Amplitude algorithm:
+    //   0 - Ducking (the more voices in a row, the less amplitude per voice)
+    //   1 - Hard clipping 10 Vpp
+    int amplitudeAlgorithm = 0;
+
     dsp::BooleanTrigger rowTrigger[4];
     dsp::BooleanTrigger colTrigger[4];
     bool ledMatrix[16];
@@ -127,15 +132,18 @@ struct MatrixMixer4 : Module {
                     }
                 }
 
-                if (numberOfConnections == 2) {
-                    out *= 0.5;
-                } else if (numberOfConnections == 3) {
-                    out *= 0.33333;
-                } else if (numberOfConnections == 4) {
-                    out *= 0.25;
+                if (amplitudeAlgorithm == 0) {
+                    if (numberOfConnections == 2) {
+                        out *= 0.5;
+                    } else if (numberOfConnections == 3) {
+                        out *= 0.33333;
+                    } else if (numberOfConnections == 4) {
+                        out *= 0.25;
+                    }
+                } else if (amplitudeAlgorithm == 1) {
+                    out = clamp(out, -5.f, 5.f);
                 }
 
-                /* out = clamp(out, -5.f, 5.f); */
                 outputs[OUT_OUTPUTS + outputNumber].setVoltage(out);
             }
         }
@@ -189,6 +197,9 @@ struct MatrixMixer4 : Module {
         }
         json_object_set_new(rootJ, "cols", colsJ);
 
+        json_object_set_new(rootJ, "amplitudeAlgorithm",
+                            json_integer(amplitudeAlgorithm));
+
         return rootJ;
     }
 
@@ -215,6 +226,12 @@ struct MatrixMixer4 : Module {
                 json_t* colJ = json_array_get(colsJ, i);
                 if (colJ) colState[i] = json_boolean_value(colJ);
             }
+        }
+
+        json_t *amplitudeAlgorithmJ = json_object_get(rootJ,
+                                                      "amplitudeAlgorithm");
+        if (amplitudeAlgorithmJ) {
+            amplitudeAlgorithm = json_integer_value(amplitudeAlgorithmJ);
         }
     }
 };
@@ -308,6 +325,41 @@ struct MatrixMixer4Widget : ModuleWidget {
         addChild(createParamCentered<TL1105>(mm2px(Vec(60.84, 105.9)), module, MatrixMixer4::COL_PARAMS + 2));
         addChild(createParamCentered<TL1105>(mm2px(Vec(77.51, 105.9)), module, MatrixMixer4::COL_PARAMS + 3));
         addChild(createParamCentered<TL1105>(mm2px(Vec(93.6, 105.9)), module, MatrixMixer4::XOR_PARAM));
+    }
+
+    struct MatrixMixer4AmplitudeItem : MenuItem {
+        MatrixMixer4 *module;
+        int algo;
+        void onAction(const event::Action &e) override {
+            module->amplitudeAlgorithm = algo;
+        }
+        void step() override {
+            rightText = (module->amplitudeAlgorithm == algo) ? "✔" : "";
+        }
+    };
+
+    void appendContextMenu(Menu *menu) override {
+        MenuLabel *spacerLabel = new MenuLabel();
+        menu->addChild(spacerLabel);
+
+        MatrixMixer4 *module = dynamic_cast<MatrixMixer4*>(this->module);
+        assert(module);
+
+        MenuLabel *themeLabel = new MenuLabel();
+        themeLabel->text = "Amplitude Algorithm";
+        menu->addChild(themeLabel);
+
+        MatrixMixer4AmplitudeItem *item1 = new MatrixMixer4AmplitudeItem();
+        item1->text = "Ducking (default)";
+        item1->module = module;
+        item1->algo = 0;
+        menu->addChild(item1);
+
+        MatrixMixer4AmplitudeItem *item2 = new MatrixMixer4AmplitudeItem();
+        item2->text = "Hard Clipping 10 Vpp";
+        item2->module = module;
+        item2->algo = 1;
+        menu->addChild(item2);
     }
 };
 
