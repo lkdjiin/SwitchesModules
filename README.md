@@ -1,5 +1,48 @@
 # NEX Switches Modules for VCV Rack
 
+## Matrix Mixer 4
+
+A matrix mixer with 4 inputs and 4 outputs. You can mute rows and/or columns via
+some different algorithms.
+
+*Un mélangeur matriciel avec 4 entrées et 4 sorties. Vous pouvez rendre muettes
+les rangées et/ou les colonnes grâce à différents algorithmes.*
+
+![]()
+
+**INPUTS**: The 4 inputs are on the top of the module.
+
+**OUTPUTS**: The 4 outputs are on the right of the module.
+
+**ROWS**: Think of each row as a 4x1 mixer. That is 4 inputs to 1 output.
+
+**COLUMNS**: Think of each column as a 1x4 multiplexer. That is 1 input to 4 outputs with different levels.
+
+**MUTE**: Pushing the button to the left of a row will mute/unmute that row.
+Same thing for the columns, pushing the button at the bottom of a column will
+mute/unmute that column. You can also use Control Voltage with each mute button.
+How individual potentiometers will be enabled/disabled depends on the actual
+algorithm.
+
+**MUTE ALGORITHM**: There is 2 algorithms. The first one is «Force», and the
+second one is «Flip-flop».  With «Force», the default one, the whole row (or
+column) is enabled or disabled, regardless of the state of the individual
+potentiometers.  That is, if a row (or column) is muted, all the 4
+potentiometers of that row (or column) are disabled.  And reciprocally, if a
+row (or column) is unmuted, all the 4 potentiometers of that row (or column)
+are enabled.  The «Flip-flop» algorithm works differently: when you mute (or
+unmute) a row (or a column), each potentiometer's state is inversed in that row
+(or column). That is, each enabled potentiometer of the row is disabled, and
+each disabled potentiometer is enabled. I know this can be a confusing reading ;)
+You can change the algorithm with the button on the bottom right.
+*NOTE: Despite the UI, there is only 2 algorithms and no Control Voltage to change the algo for now.*
+
+**AMPLITUDE ALGORITHM**: Right click the module to choose between ducking, hard clipping or no processing at all.
+- Ducking - the more voices in a row, the less amplitude per voice.
+- Hard clipping - 10 Volt peak to peak. This one could introduce a lot of distortion. Sometimes cool, sometimes harsh and not musical.
+- No processing - Inputs are simply summed together.
+
+
 ## 2x2 Mute
 
 It's like a crossfader for two groups of two channels. You can play group 1, or you can play group 2.
