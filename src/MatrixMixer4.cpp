@@ -6,7 +6,7 @@ struct MatrixMixer4 : Module {
         ENUMS(POT_PARAMS, 16),
         ENUMS(ROW_PARAMS, 4),
         ENUMS(COL_PARAMS, 4),
-        XOR_PARAM,
+        MUTE_ALGO_PARAM,
         NUM_PARAMS
     };
 
@@ -27,6 +27,7 @@ struct MatrixMixer4 : Module {
         ENUMS(SMALL_LEDS, 16),
         ENUMS(ROW_LEDS, 4),
         ENUMS(COL_LEDS, 4),
+        ENUMS(ALGO_LEDS, 4),
         NUM_LIGHTS
     };
 
@@ -36,8 +37,15 @@ struct MatrixMixer4 : Module {
     //   2 - No processing
     int amplitudeAlgorithm = 0;
 
+    // Mute algorithm (do not use 0):
+    //   0 - I repeat, DO NOT USE 0!
+    //   1 - Force (default)
+    //   2 - Flip-flop
+    int muteAlgorithm = 1;
+
     dsp::BooleanTrigger rowTrigger[4];
     dsp::BooleanTrigger colTrigger[4];
+    dsp::BooleanTrigger algoTrigger;
     bool ledMatrix[16];
     bool rowState[4];
     bool colState[4];
@@ -85,7 +93,7 @@ struct MatrixMixer4 : Module {
         configParam(COL_PARAMS + 1, 0.0, 1.0, 0.0, "Mute col 2");
         configParam(COL_PARAMS + 2, 0.0, 1.0, 0.0, "Mute col 3");
         configParam(COL_PARAMS + 3, 0.0, 1.0, 0.0, "Mute col 4");
-        configParam(XOR_PARAM, 0.0, 1.0, 0.0, "Xor mode");
+        configParam(MUTE_ALGO_PARAM, 0.0, 1.0, 0.0, "Mute algorithm");
     }
 
     void process(const ProcessArgs& args) override {
@@ -112,6 +120,13 @@ struct MatrixMixer4 : Module {
                 lights[COL_LEDS + i].setBrightness(0.9f);
             } else {
                 lights[COL_LEDS + i].setBrightness(0.f);
+            }
+        }
+        for (int i = 0; i < 4; i++) {
+            if (muteAlgorithm == i + 1) {
+                lights[ALGO_LEDS + i].setBrightness(0.9f);
+            } else {
+                lights[ALGO_LEDS + i].setBrightness(0.f);
             }
         }
     }
@@ -151,13 +166,24 @@ struct MatrixMixer4 : Module {
     }
 
     void setLightsState() {
+        if (algoTrigger.process(params[MUTE_ALGO_PARAM].getValue() > 0.f)) {
+            muteAlgorithm++;
+            if (muteAlgorithm > 2) {
+                muteAlgorithm = 1;
+            }
+        }
+
         for (int row = 0; row < 4; row++) {
             if (rowTrigger[row].process(params[ROW_PARAMS + row].getValue() > 0.f) ||
                    inputs[ROW_CV_INPUTS + row].getNormalVoltage(0.f) > 0.f) {
                 rowState[row] = !rowState[row];
                 for (int i = 0; i < 4; i++) {
                     int aLed = 4 * row + i;
-                    ledMatrix[aLed] = rowState[row];
+                    if (muteAlgorithm == 1) {
+                        ledMatrix[aLed] = rowState[row];
+                    } else {
+                        ledMatrix[aLed] = !ledMatrix[aLed];
+                    }
                 }
             }
         }
@@ -168,7 +194,11 @@ struct MatrixMixer4 : Module {
                 colState[col] = !colState[col];
                 for (int i = 0; i < 4; i++) {
                     int aLed = col + i * 4;
-                    ledMatrix[aLed] = colState[col];
+                    if (muteAlgorithm == 1) {
+                        ledMatrix[aLed] = colState[col];
+                    } else {
+                        ledMatrix[aLed] = !ledMatrix[aLed];
+                    }
                 }
             }
         }
@@ -200,6 +230,9 @@ struct MatrixMixer4 : Module {
 
         json_object_set_new(rootJ, "amplitudeAlgorithm",
                             json_integer(amplitudeAlgorithm));
+
+        json_object_set_new(rootJ, "muteAlgorithm",
+                            json_integer(muteAlgorithm));
 
         return rootJ;
     }
@@ -233,6 +266,11 @@ struct MatrixMixer4 : Module {
                                                       "amplitudeAlgorithm");
         if (amplitudeAlgorithmJ) {
             amplitudeAlgorithm = json_integer_value(amplitudeAlgorithmJ);
+        }
+
+        json_t *muteAlgorithmJ = json_object_get(rootJ, "muteAlgorithm");
+        if (muteAlgorithmJ) {
+            muteAlgorithm = json_integer_value(muteAlgorithmJ);
         }
     }
 };
@@ -317,6 +355,11 @@ struct MatrixMixer4Widget : ModuleWidget {
         addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(60.84, 99.9)), module, MatrixMixer4::COL_LEDS + 2));
         addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(77.51, 99.9)), module, MatrixMixer4::COL_LEDS + 3));
 
+        addChild(createLightCentered<TinyLight<RedLight>>(mm2px(Vec(87.5, 105.0)), module, MatrixMixer4::ALGO_LEDS + 0));
+        addChild(createLightCentered<TinyLight<RedLight>>(mm2px(Vec(87.5, 108.5)), module, MatrixMixer4::ALGO_LEDS + 1));
+        addChild(createLightCentered<TinyLight<RedLight>>(mm2px(Vec(87.5, 112.0)), module, MatrixMixer4::ALGO_LEDS + 2));
+        addChild(createLightCentered<TinyLight<RedLight>>(mm2px(Vec(87.5, 115.5)), module, MatrixMixer4::ALGO_LEDS + 3));
+
         addChild(createParamCentered<TL1105>(mm2px(Vec(15.5, 35.5)), module, MatrixMixer4::ROW_PARAMS + 0));
         addChild(createParamCentered<TL1105>(mm2px(Vec(15.5, 54.17)), module, MatrixMixer4::ROW_PARAMS + 1));
         addChild(createParamCentered<TL1105>(mm2px(Vec(15.5, 72.84)), module, MatrixMixer4::ROW_PARAMS + 2));
@@ -325,7 +368,7 @@ struct MatrixMixer4Widget : ModuleWidget {
         addChild(createParamCentered<TL1105>(mm2px(Vec(44.17, 105.9)), module, MatrixMixer4::COL_PARAMS + 1));
         addChild(createParamCentered<TL1105>(mm2px(Vec(60.84, 105.9)), module, MatrixMixer4::COL_PARAMS + 2));
         addChild(createParamCentered<TL1105>(mm2px(Vec(77.51, 105.9)), module, MatrixMixer4::COL_PARAMS + 3));
-        addChild(createParamCentered<TL1105>(mm2px(Vec(93.6, 105.9)), module, MatrixMixer4::XOR_PARAM));
+        addChild(createParamCentered<TL1105>(mm2px(Vec(93.6, 105.9)), module, MatrixMixer4::MUTE_ALGO_PARAM));
     }
 
     struct MatrixMixer4AmplitudeItem : MenuItem {
