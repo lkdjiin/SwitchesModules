@@ -11,7 +11,7 @@
   "manualUrl": "https://github.com/lkdjiin/SwitchesModules",
   "sourceUrl": "https://github.com/lkdjiin/SwitchesModules",
   "donateUrl": "",
-  "changelogUrl": "",
+  "changelogUrl": "https://github.com/lkdjiin/SwitchesModules/blob/master/CHANGELOG.md",
   "modules": [
     {
       "slug": "DoubleMute",
@@ -31,8 +31,8 @@
     },
     {
       "slug": "MatrixMixer4",
-      "name": "MatrixMixer4",
-      "description": "4 in 4 out matrix mixer",
+      "name": "Matrix Mixer 4",
+      "description": "4 x 4 matrix mixer",
       "tags": [
         "mixer"
       ]
