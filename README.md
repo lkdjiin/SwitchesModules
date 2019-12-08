@@ -27,6 +27,7 @@ algorithm.
 **MUTE ALGORITHM**: There is 3 algorithms. The first one is «Force», the
 second one is «Flip-flop», and the last one is «Intersections».
 You can change the algorithm with the button on the bottom right.
+You can also use Control Voltage to change the algorithm.
 
 1. With «Force», the default one, the whole row (or
 column) is enabled or disabled, regardless of the state of the individual
@@ -41,7 +42,7 @@ each disabled potentiometer is enabled. I know this can be a confusing reading ;
 3. With «Intersections», potentiometers are enabled only if their respective row
 and their respective column is enabled (or unmute, or on, or whatever you call it).
 
-*NOTE: Despite the UI, there is only 3 algorithms and no Control Voltage to change the algo for now.*
+*NOTE: Despite the UI, there is only 3 algorithms for now, not 4.*
 
 **AMPLITUDE ALGORITHM**: Right click the module to choose between ducking, hard clipping or no processing at all.
 - Ducking - the more voices in a row, the less amplitude per voice.

@@ -14,7 +14,7 @@ struct MatrixMixer4 : Module {
         ENUMS(IN_INPUTS, 4),
         ENUMS(ROW_CV_INPUTS, 4),
         ENUMS(COL_CV_INPUTS, 4),
-        XOR_CV_INPUT,
+        ALGO_CV_INPUT,
         NUM_INPUTS
     };
 
@@ -167,7 +167,8 @@ struct MatrixMixer4 : Module {
     }
 
     void setLightsState() {
-        if (algoTrigger.process(params[MUTE_ALGO_PARAM].getValue() > 0.f)) {
+        if (algoTrigger.process(params[MUTE_ALGO_PARAM].getValue() +
+                                inputs[ALGO_CV_INPUT].getVoltage())) {
             muteAlgorithm++;
             if (muteAlgorithm > 3) {
                 muteAlgorithm = 1;
@@ -327,7 +328,7 @@ struct MatrixMixer4Widget : ModuleWidget {
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(44.17, 115.0)), module, MatrixMixer4::COL_CV_INPUTS + 1));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(60.84, 115.0)), module, MatrixMixer4::COL_CV_INPUTS + 2));
         addInput(createInputCentered<PJ301MPort>(mm2px(Vec(77.51, 115.0)), module, MatrixMixer4::COL_CV_INPUTS + 3));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(93.6, 115.0)), module, MatrixMixer4::XOR_CV_INPUT));
+        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(93.6, 115.0)), module, MatrixMixer4::ALGO_CV_INPUT));
 
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 35.5)), module, MatrixMixer4::OUT_OUTPUTS + 0));
         addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(93.6, 54.17)), module, MatrixMixer4::OUT_OUTPUTS + 1));
