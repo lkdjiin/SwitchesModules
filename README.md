@@ -8,7 +8,7 @@ some different algorithms.
 *Un mélangeur matriciel avec 4 entrées et 4 sorties. Vous pouvez rendre muettes
 les rangées et/ou les colonnes grâce à différents algorithmes.*
 
-![]()
+![](https://github.com/lkdjiin/SwitchesModules/blob/master/images/matrixmixer4.png)
 
 **INPUTS**: The 4 inputs are on the top of the module.
 
@@ -24,18 +24,24 @@ mute/unmute that column. You can also use Control Voltage with each mute button.
 How individual potentiometers will be enabled/disabled depends on the actual
 algorithm.
 
-**MUTE ALGORITHM**: There is 2 algorithms. The first one is «Force», and the
-second one is «Flip-flop».  With «Force», the default one, the whole row (or
+**MUTE ALGORITHM**: There is 3 algorithms. The first one is «Force», the
+second one is «Flip-flop», and the last one is «Intersections».
+You can change the algorithm with the button on the bottom right.
+
+1. With «Force», the default one, the whole row (or
 column) is enabled or disabled, regardless of the state of the individual
 potentiometers.  That is, if a row (or column) is muted, all the 4
 potentiometers of that row (or column) are disabled.  And reciprocally, if a
 row (or column) is unmuted, all the 4 potentiometers of that row (or column)
-are enabled.  The «Flip-flop» algorithm works differently: when you mute (or
+are enabled. No doubt it's the most intuitive algorithm.
+2. The «Flip-flop» works differently: when you mute (or
 unmute) a row (or a column), each potentiometer's state is inversed in that row
 (or column). That is, each enabled potentiometer of the row is disabled, and
 each disabled potentiometer is enabled. I know this can be a confusing reading ;)
-You can change the algorithm with the button on the bottom right.
-*NOTE: Despite the UI, there is only 2 algorithms and no Control Voltage to change the algo for now.*
+3. With «Intersections», potentiometers are enabled only if their respective row
+and their respective column is enabled (or unmute, or on, or whatever you call it).
+
+*NOTE: Despite the UI, there is only 3 algorithms and no Control Voltage to change the algo for now.*
 
 **AMPLITUDE ALGORITHM**: Right click the module to choose between ducking, hard clipping or no processing at all.
 - Ducking - the more voices in a row, the less amplitude per voice.

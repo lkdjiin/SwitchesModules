@@ -40,7 +40,8 @@ struct MatrixMixer4 : Module {
     // Mute algorithm (do not use 0):
     //   0 - I repeat, DO NOT USE 0!
     //   1 - Force (default)
-    //   2 - Flip-flop
+    //   2 - Flip-flop (it's like XOR)
+    //   3 - Intersections (it's like AND)
     int muteAlgorithm = 1;
 
     dsp::BooleanTrigger rowTrigger[4];
@@ -168,7 +169,7 @@ struct MatrixMixer4 : Module {
     void setLightsState() {
         if (algoTrigger.process(params[MUTE_ALGO_PARAM].getValue() > 0.f)) {
             muteAlgorithm++;
-            if (muteAlgorithm > 2) {
+            if (muteAlgorithm > 3) {
                 muteAlgorithm = 1;
             }
         }
@@ -181,6 +182,8 @@ struct MatrixMixer4 : Module {
                     int aLed = 4 * row + i;
                     if (muteAlgorithm == 1) {
                         ledMatrix[aLed] = rowState[row];
+                    } else if (muteAlgorithm == 3) {
+                        ledMatrix[aLed] = rowState[row] && colState[i];
                     } else {
                         ledMatrix[aLed] = !ledMatrix[aLed];
                     }
@@ -196,6 +199,8 @@ struct MatrixMixer4 : Module {
                     int aLed = col + i * 4;
                     if (muteAlgorithm == 1) {
                         ledMatrix[aLed] = colState[col];
+                    } else if (muteAlgorithm == 3) {
+                        ledMatrix[aLed] = colState[col] && rowState[i];
                     } else {
                         ledMatrix[aLed] = !ledMatrix[aLed];
                     }
