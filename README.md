@@ -1,6 +1,6 @@
 # NEX Switches Modules for VCV Rack
 
-## Matrix Mixer 4 (beta, not yet released)
+## Matrix Mixer 4
 
 A matrix mixer with 4 inputs and 4 outputs. You can mute rows and/or columns via
 some different algorithms.

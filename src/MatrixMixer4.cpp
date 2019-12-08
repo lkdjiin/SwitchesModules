@@ -176,8 +176,8 @@ struct MatrixMixer4 : Module {
         }
 
         for (int row = 0; row < 4; row++) {
-            if (rowTrigger[row].process(params[ROW_PARAMS + row].getValue() > 0.f) ||
-                   inputs[ROW_CV_INPUTS + row].getNormalVoltage(0.f) > 0.f) {
+            if (rowTrigger[row].process(params[ROW_PARAMS + row].getValue() +
+                                   inputs[ROW_CV_INPUTS + row].getVoltage())) {
                 rowState[row] = !rowState[row];
                 for (int i = 0; i < 4; i++) {
                     int aLed = 4 * row + i;
@@ -193,8 +193,8 @@ struct MatrixMixer4 : Module {
         }
 
         for (int col = 0; col < 4; col++) {
-            if (colTrigger[col].process(params[COL_PARAMS + col].getValue() > 0.f) ||
-                    inputs[COL_CV_INPUTS + col].getNormalVoltage(0.f) > 0.f) {
+            if (colTrigger[col].process(params[COL_PARAMS + col].getValue() +
+                                    inputs[COL_CV_INPUTS + col].getVoltage())) {
                 colState[col] = !colState[col];
                 for (int i = 0; i < 4; i++) {
                     int aLed = col + i * 4;
